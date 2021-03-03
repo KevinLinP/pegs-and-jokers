@@ -1,3 +1,4 @@
+- [ ] make sample cryptographically secure
 - [ ] undo/redo
 - [ ] pieces
 - [ ] SVG board

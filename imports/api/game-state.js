@@ -1,7 +1,10 @@
+import crypto from 'crypto';
 import { Meteor } from 'meteor/meteor';
+import _ from 'lodash'
 
 import { Games } from './games.js'
 import { GameCards } from './game-cards.js'
+import { Players } from './players.js'
 
 // enums would be nice 😠
 const CARD_NUMBERS = [
@@ -22,6 +25,7 @@ export default class GameState {
   }
 
   get gameId() { return this.game._id }
+  get players() { return Players.find({gameId: this.gameId}).fetch() }
 
   initializeCards() {
     const cards = []
@@ -30,17 +34,47 @@ export default class GameState {
     decks.forEach((deck) => {
       SUITS.forEach((suit) => {
         CARD_NUMBERS.slice(0, 13).forEach((num) => {
-          cards.push({gameId: this.gameId, deck, suit, num})
+          cards.push({deck, suit, num})
         })
       })
 
-      cards.push({gameId: this.gameId, deck, suit: 'R', num: 'Jo'})
-      cards.push({gameId: this.gameId, deck, suit: 'B', num: 'Jo'})
+      cards.push({deck, suit: 'R', num: 'Jo'})
+      cards.push({deck, suit: 'B', num: 'Jo'})
     })
 
-    GameCards.rawCollection().insertMany(cards)
+    cards.forEach((c) => {
+      c.gameId = this.gameId
+      c.owner = 'D'
+    })
+
+    const handCount = 5
+    const randomNumbers = this.randomNumbers(0, cards.length, this.players.length * handCount)
+
+    this.players.forEach((p) => {
+      _.range(handCount).forEach((n) => {
+        const index = randomNumbers.pop()
+        cards[index].owner = p._id
+      })
+    })
+
+    // GameCards.rawCollection().insertMany(cards)
+    cards.forEach((c) => {
+      // TODO: figure out issue with object ids
+      GameCards.insert(c)
+    })
+  }
+
+  randomNumbers(start, endExclusive, length) {
+    const numbers = new Set()
+
+    while (numbers.size < length) {
+      numbers.add(crypto.randomInt(start, endExclusive))
+    }
+
+    return Array.from(numbers)
   }
 }
+
 
 // Meteor.methods({
 //   'gameState.takeAction' ({game}) {
