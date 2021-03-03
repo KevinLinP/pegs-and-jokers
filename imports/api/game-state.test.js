@@ -6,6 +6,32 @@ import { Players } from './players.js'
 import { GameCards } from './game-cards.js'
 import GameState from './game-state.js'
 
+const setupAndInitializeGame = async function () {
+  const gameId = Games.insert({numPlayers: 4})
+  let game = Games.findOne(gameId)
+
+  const players = [
+    {name: 'Alfa', num: 1},
+    {name: 'Bravo', num: 2},
+    {name: 'Charlie', num: 3},
+    {name: 'Delta', num: 4},
+  ]
+
+  players.forEach((playerData) => {
+    Players.insert(Object.assign({}, playerData, {gameId}))
+  })
+
+  const gameState = new GameState(game)
+  await gameState.initialize()
+  game = Games.findOne(gameId)
+
+  return {gameId, game, players, gameState}
+}
+
+const assertDocumentEquality = function(a, b) {
+  assert.equal(a._id.valueOf(), b._id.valueOf())
+}
+
 if (Meteor.isServer) {
   describe('GameState', function () {
     beforeEach(function () {
@@ -13,23 +39,7 @@ if (Meteor.isServer) {
     });
 
     it('initializes', async function () {
-      const gameId = Games.insert({})
-      let game = Games.findOne(gameId)
-
-      const players = [
-        {name: 'Alfa', num: 1},
-        {name: 'Bravo', num: 2},
-        {name: 'Charlie', num: 3},
-        {name: 'Delta', num: 4},
-      ]
-
-      players.forEach((playerData) => {
-        Players.insert(Object.assign({}, playerData, {gameId}))
-      })
-
-      const gameState = new GameState(game)
-      await gameState.initialize()
-      game = Games.findOne(gameId)
+      ({gameId, game, players, gameState} = await setupAndInitializeGame())
       player = Players.findOne({gameId})
 
       // console.log(GameCards.findOne())
@@ -40,7 +50,14 @@ if (Meteor.isServer) {
       assert.equal(GameCards.find({gameId, owner: player._id}).count(), 5)
     })
 
+    it('has a starting currentPlayer', async function () {
+      ({gameId, game, players, gameState} = await setupAndInitializeGame())
+      const player1 = Players.findOne({gameId, num: 1})
+      assertDocumentEquality(gameState.currentPlayer, player1)
+    })
+
     it('lets a player discard and undo', function () {
+      gameState.discardCard(playerId, cardId)
     })
   });
 }

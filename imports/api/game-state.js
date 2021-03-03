@@ -6,6 +6,7 @@ import { ObjectID } from 'mongodb'
 import { Games } from './games.js'
 import { GameCards } from './game-cards.js'
 import { Players } from './players.js'
+import { GameActions } from './game-actions.js'
 
 // enums would be nice 😠
 const CARD_NUMBERS = [
@@ -76,6 +77,26 @@ export default class GameState {
     }
 
     return Array.from(numbers)
+  }
+
+  get numPlayers() { return this.game.numPlayers }
+
+  get lastAction() {
+    return GameActions.findOne({gameId: this.gameId}, {sort: {num: -1}, limit: 1})
+  }
+
+  get currentPlayerNum() {
+    if (!this.lastAction) { return 1 }
+    const lastActionPlayer = Players.findOne({playerId: this.lastAction.playerId})
+
+    return ((lastActionPlayer.num - 1 + 1) % this.numPlayers) + 1
+  }
+
+  get currentPlayer() {
+    return Players.findOne({gameId: this.gameId, num: this.currentPlayerNum})
+  }
+
+  discardCard() {
   }
 }
 
