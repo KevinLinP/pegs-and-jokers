@@ -20,15 +20,31 @@ export default class GameState {
     this.game = game
   }
 
-  initialize() {
-    this.initializeCards()
+  async initialize() {
+    await this.initializeCards()
     Games.update(this.game, {$set: {initializedAt: new Date()}})
   }
 
   get gameId() { return this.game._id }
   get players() { return Players.find({gameId: this.gameId}).fetch() }
 
-  initializeCards() {
+  async initializeCards() {
+    const cards = this.generateCards()
+
+    const handCount = 5
+    const randomNumbers = this.randomNumbers(0, cards.length, this.players.length * handCount)
+
+    this.players.forEach((p) => {
+      _.range(handCount).forEach((n) => {
+        const index = randomNumbers.pop()
+        cards[index].owner = ObjectID(p._id.toHexString())
+      })
+    })
+
+    await GameCards.rawCollection().insertMany(cards)
+  }
+
+  generateCards() {
     const cards = []
     const decks = [1, 2]
 
@@ -49,17 +65,7 @@ export default class GameState {
       c.owner = 'D'
     })
 
-    const handCount = 5
-    const randomNumbers = this.randomNumbers(0, cards.length, this.players.length * handCount)
-
-    this.players.forEach((p) => {
-      _.range(handCount).forEach((n) => {
-        const index = randomNumbers.pop()
-        cards[index].owner = ObjectID(p._id.toHexString())
-      })
-    })
-
-    GameCards.rawCollection().insertMany(cards)
+    return cards
   }
 
   randomNumbers(start, endExclusive, length) {

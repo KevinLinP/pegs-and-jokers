@@ -12,7 +12,7 @@ if (Meteor.isServer) {
       resetDatabase();
     });
 
-    it('initializes', function () {
+    it('initializes', async function () {
       const gameId = Games.insert({})
       let game = Games.findOne(gameId)
 
@@ -28,7 +28,7 @@ if (Meteor.isServer) {
       })
 
       const gameState = new GameState(game)
-      gameState.initialize()
+      await gameState.initialize()
       game = Games.findOne(gameId)
       player = Players.findOne({gameId})
 
@@ -38,6 +38,9 @@ if (Meteor.isServer) {
       assert.equal(GameCards.find({gameId}).count(), 54 * 2)
       assert.equal(GameCards.find({gameId, owner: 'D'}).count(), (54 * 2) - 20)
       assert.equal(GameCards.find({gameId, owner: player._id}).count(), 5)
+    })
+
+    it('lets a player discard and undo', function () {
     })
   });
 }
