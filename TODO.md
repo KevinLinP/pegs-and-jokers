@@ -1,0 +1,5 @@
+- [ ] undo/redo
+- [ ] pieces
+- [ ] SVG board
+- [ ] random discard pile
+- [ ] helper mode
