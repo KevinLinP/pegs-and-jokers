@@ -32,6 +32,8 @@ if (Meteor.isServer) {
       game = Games.findOne(gameId)
       player = Players.findOne({gameId})
 
+      // console.log(GameCards.findOne())
+
       assert.isNotNull(game.initializedAt)
       assert.equal(GameCards.find({gameId}).count(), 54 * 2)
       assert.equal(GameCards.find({gameId, owner: 'D'}).count(), (54 * 2) - 20)

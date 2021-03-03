@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { Meteor } from 'meteor/meteor';
 import _ from 'lodash'
+import { ObjectID } from 'mongodb'
 
 import { Games } from './games.js'
 import { GameCards } from './game-cards.js'
@@ -43,7 +44,8 @@ export default class GameState {
     })
 
     cards.forEach((c) => {
-      c.gameId = this.gameId
+      // c.gameId = new Mongo.ObjectID(this.gameId.toHexString())
+      c.gameId = ObjectID(this.gameId.toHexString())
       c.owner = 'D'
     })
 
@@ -53,15 +55,11 @@ export default class GameState {
     this.players.forEach((p) => {
       _.range(handCount).forEach((n) => {
         const index = randomNumbers.pop()
-        cards[index].owner = p._id
+        cards[index].owner = ObjectID(p._id.toHexString())
       })
     })
 
-    // GameCards.rawCollection().insertMany(cards)
-    cards.forEach((c) => {
-      // TODO: figure out issue with object ids
-      GameCards.insert(c)
-    })
+    GameCards.rawCollection().insertMany(cards)
   }
 
   randomNumbers(start, endExclusive, length) {
