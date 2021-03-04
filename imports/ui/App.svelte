@@ -3,6 +3,10 @@
   import * as d3 from 'd3'
   import { transform } from 'd3-transform'
   import { onMount } from 'svelte'
+  import ToDo from './ToDo.svelte'
+
+  import panzoom from 'panzoom'
+  import svgPanZoom from 'svg-pan-zoom'
 
   let svg
   let numPlayers = 6
@@ -15,7 +19,7 @@
     '#ff00ff'
   ]
   let data = _.range(numPlayers).map((n) => {
-    return {num: n + 1, mainHoles: _.range(18), color: playerColors[n]}
+    return {num: n + 1, mainHoles: _.range(18), color: playerColors[n] || '#FFFFFF'}
   })
 
   function sinD(angle) {
@@ -26,7 +30,7 @@
   }
 
   const holeRadius = 0.5
-  const holeSpacing = 2.5
+  const holeSpacing = 2.25
   const sideLength = 18 * holeSpacing
   const boardCircleRadius = sideLength / (2*sinD(180 / numPlayers))
   const angle = (360 / numPlayers)
@@ -43,8 +47,10 @@
       }).rotate(function (d) {
         return ((d.num - 1) * angle)
       })
+    
+    const board = d3.select(svg).append('g').attr('id', 'svg-board')
 
-    const group = d3.select(svg).selectAll('g')
+    const group = board.selectAll('g')
       .data(data)
       .join('g')
       .attr('transform', groupTransform)
@@ -93,16 +99,39 @@
       .attr('cx', 0)
       .attr('cy', function (d) {return ((d * -1) - 1) * holeSpacing})
       .attr('fill', function (d) { return this.parentNode.__data__.color })
+
+    // panzoom(document.getElementById('svg-board'), {
+    //   smoothScroll: false
+    // })
+    svgPanZoom('#svg')
 	});
+
+  const todos = [
+    'animate moving peg',
+    'tweak panning/zooming',
+    'finish data model playing cards',
+    'data model pieces/positions',
+    'available moves calculator',
+    'display playing cards',
+    'undo/redo',
+    'lots more'
+  ]
+
 </script>
 
 <style>
   svg {
     background-color: rgba(0, 0, 0, 0.2);
     width: 100vw;
-    height: 100vh;
+    height: 90vh;
   }
 </style>
 
-<svg viewBox='-50 -50 100 100' bind:this={svg}>
-</svg>
+<div id="svg-wrapper">
+  <svg viewBox='-50 -50 100 100' bind:this={svg} id="svg">
+  </svg>
+</div>
+
+<div class="container">
+  <ToDo />
+</div>
