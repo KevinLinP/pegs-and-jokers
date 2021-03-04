@@ -10,7 +10,7 @@
   "dependencies": {
     "@babel/runtime": "^7.11.2",
     "aws4": "^1.11.0",
-    "d3-selection": "^2.0.0",
+    "d3": "^6.5.0",
     "d3-transform": "^1.0.5",
     "jquery": "^3.5.1",
     "lodahs": "0.0.1-security",

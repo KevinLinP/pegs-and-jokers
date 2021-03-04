@@ -1,13 +1,21 @@
 <script>
   import _ from 'lodash'
-  import { select } from 'd3-selection'
+  import * as d3 from 'd3'
   import { transform } from 'd3-transform'
   import { onMount } from 'svelte'
 
   let svg
   let numPlayers = 6
+  const playerColors = [
+    '#FF8C00',
+    '#00FFFF',
+    '#FF0000',
+    '#FFF68F',
+    '#00FF00',
+    '#ff00ff'
+  ]
   let data = _.range(numPlayers).map((n) => {
-    return {num: n + 1, mainHoles: _.range(18)}
+    return {num: n + 1, mainHoles: _.range(18), color: playerColors[n]}
   })
 
   function sinD(angle) {
@@ -25,24 +33,25 @@
 
   onMount(() => {
     var groupTransform = transform()
-      .translate((d) => {
+      .translate(function (d) {
         const circleAngle = (-1 * (d.num - 1 ) * angle) + (angle / 2)
         const translate = [
           sinD(circleAngle) * boardCircleRadius,
           cosD(circleAngle) * boardCircleRadius,
         ]
         return translate
-      }).rotate((d) => {
+      }).rotate(function (d) {
         return ((d.num - 1) * angle)
       })
 
-    const group = select(svg).selectAll('g')
+    const group = d3.select(svg).selectAll('g')
       .data(data)
       .join('g')
       .attr('transform', groupTransform)
     
-    group.selectAll('circle')
-      .data((d, i) => d.mainHoles)
+    group.append('g')
+      .selectAll('circle')
+      .data(function (d, i) { return d.mainHoles})
       .join('circle')
       .attr('r', holeRadius)
       .attr('cx', (d) => d * -1 * holeSpacing)
@@ -50,20 +59,50 @@
       .attr('fill', (d) => {
         if (d == 0) {
           return "#666666"
+        } else if (d == 3 || d == 8) {
+          return "#FFFFFF"
         } else {
           return "#FFFFFF"
         }
       })
+
+    const startPositions = [
+      [0, -1], [-1, 0], [0, 0], [1, 0], [0, 1]
+    ]
+
+    const startTransform = transform().translate(-8 * holeSpacing, -2 * holeSpacing)
+
+    group.append('g')
+      .attr('transform', startTransform)
+      .selectAll('circle')
+      .data(_.range(5))
+      .join('circle')
+      .attr('r', holeRadius)
+      .attr('cx', function (d) { return (startPositions[d][0]) * holeSpacing})
+      .attr('cy', function (d) { return (startPositions[d][1]) * holeSpacing })
+      .attr('fill', function (d) { return this.parentNode.__data__.color })
+    
+    const homeTransform = transform().translate(-3 * holeSpacing, 0 * holeSpacing).rotate(-30)
+
+    group.append('g')
+      .attr('transform', homeTransform)
+      .selectAll('circle')
+      .data(_.range(5))
+      .join('circle')
+      .attr('r', holeRadius)
+      .attr('cx', 0)
+      .attr('cy', function (d) {return ((d * -1) - 1) * holeSpacing})
+      .attr('fill', function (d) { return this.parentNode.__data__.color })
 	});
 </script>
 
 <style>
   svg {
     background-color: rgba(0, 0, 0, 0.2);
+    width: 100vw;
+    height: 100vh;
   }
 </style>
 
-<div class="container">
-  <svg viewBox='-50 -50 100 100' bind:this={svg}>
-  </svg>
-</div>
+<svg viewBox='-50 -50 100 100' bind:this={svg}>
+</svg>
