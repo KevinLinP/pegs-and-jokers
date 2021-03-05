@@ -9,9 +9,9 @@ const sideLength = legLength * holeSpacing
 
 export default function drawSVG(svg, {numPlayers, playerColors}) {
   const boardCircleRadius = sideLength / (2*sinD(180 / numPlayers))
-  const angle = (360 / numPlayers)
+  const angleDelta = (360 / numPlayers)
   const corners = _.range(numPlayers).map((n) => {
-    const circleAngle = (-1 * n * angle) + (angle / 2)
+    const circleAngle = (-1 * n * angleDelta) + (angleDelta / 2)
     return {
       x: sinD(circleAngle) * boardCircleRadius,
       y: cosD(circleAngle) * boardCircleRadius
@@ -38,7 +38,46 @@ export default function drawSVG(svg, {numPlayers, playerColors}) {
     return leg
   })
 
-  const allElements = corners.concat(legs.flat())
+  const starts = legs.map((leg, legNum) => {
+    const reference = leg[7]
+    const relativePositions = [
+      [0, -3], [-1, -2], [0, -2], [1, -2], [0, -1]
+    ]
+
+    return relativePositions.map((pos) => {
+      let x = pos[0] * holeSpacing
+      let y = pos[1] * holeSpacing
+
+      const rotationAngle = -1 * angleDelta * legNum
+      const rotated = rotate(x, y, rotationAngle)
+
+      x = rotated[0] + reference.x
+      y = rotated[1] + reference.y
+
+      return {x, y}
+    })
+  })
+
+  const homes = legs.map((leg, legNum) => {
+    const reference = leg[2]
+
+    return _.range(1, 6).map((num) => {
+      let x = 0
+      let y = -1 * num * holeSpacing
+      const rotationAngle = -1 * angleDelta * legNum + 30
+      const rotated = rotate(x, y, rotationAngle)
+
+      x = rotated[0] + reference.x
+      y = rotated[1] + reference.y
+
+      return {x, y}
+    })
+  })
+
+  const allElements = corners
+    .concat(legs.flat())
+    .concat(starts.flat())
+    .concat(homes.flat())
 
   const board = d3.select(svg)
     .selectAll('circle')
@@ -55,4 +94,13 @@ function sinD(angle) {
 }
 function cosD(angle) {
   return Math.cos(angle*Math.PI/180);
+}
+
+function rotate(x, y, angle) {
+  const sin = sinD(angle)
+  const cos = cosD(angle)
+  const nx = (cos * x) + (sin * y)
+  const ny = (cos * y) - (sin * x)
+
+  return [nx, ny]
 }
