@@ -1,14 +1,15 @@
 <script>
   const todos = [
     'animate moving peg',
-    'tweak panning/zooming',
+    'auto zooming/panning',
     'finish playing cards data model',
     'data model pieces/positions',
     'taking actions',
-    'available moves calculator',
+    'available moves calculator/display',
     'display playing cards',
     'undo/redo',
     'player setup',
+    'hover movelist to show history',
     'lots more'
   ]
 </script>

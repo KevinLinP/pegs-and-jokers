@@ -1,7 +1,8 @@
-import _ from 'lodash'
+import _, { join } from 'lodash'
 import * as d3 from 'd3'
 
 const holeRadius = 0.5
+const pegRadius = holeRadius * 1.8
 const holeSpacing = 2.25
 const legLength = 18
 const sideLength = legLength * holeSpacing
@@ -100,7 +101,7 @@ export default function drawSVG(svg, {numPlayers, playerColors}) {
     .attr('r', holeRadius)
     .attr('cx', function (d) { return d.x })
     .attr('cy', function (d) { return d.y })
-    .attr('fill', function (d) { return '#FFFFFF' })
+    .attr('fill', function (d) { return holeDarker('#FFFFFF') })
 
   board.append('g').attr('class', 'starts')
     .selectAll('circle')
@@ -109,7 +110,7 @@ export default function drawSVG(svg, {numPlayers, playerColors}) {
     .attr('r', holeRadius)
     .attr('cx', function (d) { return d.x })
     .attr('cy', function (d) { return d.y })
-    .attr('fill', function (d) { return playerColors[d.start] })
+    .attr('fill', function (d) { return holeDarker(playerColors[d.start]) })
 
   board.append('g').attr('class', 'homes')
     .selectAll('circle')
@@ -118,7 +119,53 @@ export default function drawSVG(svg, {numPlayers, playerColors}) {
     .attr('r', holeRadius)
     .attr('cx', function (d) { return d.x })
     .attr('cy', function (d) { return d.y })
-    .attr('fill', function (d) { return playerColors[d.home] })
+    .attr('fill', function (d) { return holeDarker(playerColors[d.home]) })
+  
+  const pegs = [
+    {player: 0, num: 0, hole: starts[0][0]},
+    {player: 0, num: 1, hole: starts[0][1]},
+    {player: 0, num: 2, hole: starts[0][2]},
+    {player: 0, num: 3, hole: starts[0][3]},
+    {player: 0, num: 4, hole: starts[0][4]},
+  ]
+  
+  const pegsD3 = board.append('g').attr('class', 'peg')
+    .selectAll('circle')
+    .data(pegs)
+    .join('circle')
+    .attr('r', pegRadius)
+    .attr('cx', function (p) { return p.hole.x })
+    .attr('cy', function (p) { return p.hole.y })
+    .attr('fill', function (p) { return playerColors[p.player] })
+
+  peg = pegsD3.filter((p) => p.player == 0 && p.num == 0)
+  const removeInsertDuration = 500
+  const movingRadiusRatio = 1.3
+  const something = peg.transition()
+    .delay(500)
+    .attr('r', pegRadius * movingRadiusRatio)
+    .duration(removeInsertDuration)
+    .transition()
+    .duration(1000)
+    .ease(d3.easePoly.exponent(4))
+    .attr('cx', function (p) { return startExits[0].x })
+    .attr('cy', function (p) { return startExits[0].y })
+    .transition()
+    .duration(removeInsertDuration)
+    .attr('r', pegRadius)
+  
+  something.transition()
+    .delay(250)
+    .attr('r', pegRadius * movingRadiusRatio)
+    .duration(removeInsertDuration)
+    .transition()
+    .duration(1500)
+    .ease(d3.easePoly.exponent(4))
+    .attr('cx', function (p) { return corners[1].x })
+    .attr('cy', function (p) { return corners[1].y })
+    .transition()
+    .duration(removeInsertDuration)
+    .attr('r', pegRadius)
 }
 
 function sinD(angle) {
@@ -135,4 +182,8 @@ function rotate(x, y, angle) {
   const ny = (cos * y) - (sin * x)
 
   return [nx, ny]
+}
+
+function holeDarker(colorStr) {
+  return d3.color(colorStr).darker(.9)
 }
