@@ -1,6 +1,5 @@
 import _ from 'lodash'
 import * as d3 from 'd3'
-import { transform } from 'd3-transform'
 
 const holeRadius = 0.5
 const holeSpacing = 2.25
@@ -10,83 +9,116 @@ const sideLength = legLength * holeSpacing
 export default function drawSVG(svg, {numPlayers, playerColors}) {
   const boardCircleRadius = sideLength / (2*sinD(180 / numPlayers))
   const angleDelta = (360 / numPlayers)
-  const corners = _.range(numPlayers).map((n) => {
-    const circleAngle = (-1 * n * angleDelta) + (angleDelta / 2)
+
+  let corners = _.range(numPlayers).map((i) => {
+    const circleAngle = (-1 * i * angleDelta) + (angleDelta / 2)
     return {
       x: sinD(circleAngle) * boardCircleRadius,
-      y: cosD(circleAngle) * boardCircleRadius
+      y: cosD(circleAngle) * boardCircleRadius,
+      corner: i
     }
   })
+  console.log(corners)
 
-  const legs = corners.map((corner, i) => {
-    const leg = []
+  const startExits = []
+  const homeEntrances = []
+
+  let legs = corners.map((corner, i) => {
+    let leg = [corner]
+
     const nextIndex = (i + 1) % numPlayers
-
-    const dX = (corners[nextIndex].x - corner.x) / legLength
-    const dY = (corners[nextIndex].y - corner.y) / legLength
+    const nextCorner = corners[nextIndex]
+    const dX = (nextCorner.x - corner.x) / legLength
+    const dY = (nextCorner.y - corner.y) / legLength
 
     let currentX = corner.x
     let currentY = corner.y
-
-    _.range(legLength - 1).forEach(() => {
+  
+    _.range(1, legLength).forEach((j) => {
       currentX += dX
       currentY += dY
 
-      leg.push({x: currentX, y: currentY})
+      obj = {x: currentX, y: currentY}
+      if (j == 3) {
+        obj.homeEntrance = i
+        homeEntrances[i] = obj
+      } else if (j == 8) {
+        obj.startExit = i
+        startExits[i] = obj
+      }
+      leg.push(obj)
     })
 
     return leg
   })
 
-  const starts = legs.map((leg, legNum) => {
-    const reference = leg[7]
-    const relativePositions = [
-      [0, -3], [-1, -2], [0, -2], [1, -2], [0, -1]
-    ]
+  const track = legs.flat()
+  track.forEach((hole, i) => {
+    hole.pos = i
+  })
 
-    return relativePositions.map((pos) => {
+  const startRelativePositions = [
+    [0, -3], [-1, -2], [0, -2], [1, -2], [0, -1]
+  ]
+  const starts = startExits.map((startExit, i) => {
+    return startRelativePositions.map((pos, j) => {
       let x = pos[0] * holeSpacing
       let y = pos[1] * holeSpacing
 
-      const rotationAngle = -1 * angleDelta * legNum
+      const rotationAngle = -1 * angleDelta * i 
       const rotated = rotate(x, y, rotationAngle)
 
-      x = rotated[0] + reference.x
-      y = rotated[1] + reference.y
+      x = rotated[0] + startExit.x
+      y = rotated[1] + startExit.y
 
-      return {x, y}
+      return {x, y, start: i, startPos: j}
     })
   })
 
-  const homes = legs.map((leg, legNum) => {
-    const reference = leg[2]
-
-    return _.range(1, 6).map((num) => {
+  const homes = homeEntrances.map((homeEntrance, i) => {
+    return _.range(5).map((j) => {
       let x = 0
-      let y = -1 * num * holeSpacing
-      const rotationAngle = -1 * angleDelta * legNum + 30
+      let y = -1 * (j + 1) * holeSpacing
+      const rotationAngle = (-1 * angleDelta * i) + 30
       const rotated = rotate(x, y, rotationAngle)
 
-      x = rotated[0] + reference.x
-      y = rotated[1] + reference.y
+      x = rotated[0] + homeEntrance.x
+      y = rotated[1] + homeEntrance.y
 
-      return {x, y}
+      return {x, y, home: i, homePos: j}
     })
   })
 
-  const allElements = corners
-    .concat(legs.flat())
-    .concat(starts.flat())
-    .concat(homes.flat())
+  console.log({legs, track, startExits, homeEntrances, starts, homes})
 
   const board = d3.select(svg)
+
+  board.append('g').attr('class', 'track')
     .selectAll('circle')
-    .data(allElements)
+    .data(track)
     .join('circle')
     .attr('r', holeRadius)
     .attr('cx', function (d) { return d.x })
     .attr('cy', function (d) { return d.y })
     .attr('fill', function (d) { return '#FFFFFF' })
+
+  board.append('g').attr('class', 'starts')
+    .selectAll('circle')
+    .data(starts.flat())
+    .join('circle')
+    .attr('r', holeRadius)
+    .attr('cx', function (d) { return d.x })
+    .attr('cy', function (d) { return d.y })
+    .attr('fill', function (d) { return playerColors[d.start] })
+
+  board.append('g').attr('class', 'homes')
+    .selectAll('circle')
+    .data(homes.flat())
+    .join('circle')
+    .attr('r', holeRadius)
+    .attr('cx', function (d) { return d.x })
+    .attr('cy', function (d) { return d.y })
+    .attr('fill', function (d) { return playerColors[d.home] })
 }
 
 function sinD(angle) {
