@@ -134,38 +134,15 @@ export default function drawSVG(svg, {numPlayers, playerColors}) {
     .data(pegs)
     .join('circle')
     .attr('r', pegRadius)
-    .attr('cx', function (p) { return p.hole.x })
-    .attr('cy', function (p) { return p.hole.y })
+    .attr('transform', function(p) { 
+      return `translate(${p.hole.x}, ${p.hole.y})`
+    })
     .attr('fill', function (p) { return playerColors[p.player] })
 
   peg = pegsD3.filter((p) => p.player == 0 && p.num == 0)
-  const removeInsertDuration = 500
-  const movingRadiusRatio = 1.3
-  const something = peg.transition()
-    .delay(500)
-    .attr('r', pegRadius * movingRadiusRatio)
-    .duration(removeInsertDuration)
-    .transition()
-    .duration(1000)
-    .ease(d3.easePoly.exponent(4))
-    .attr('cx', function (p) { return startExits[0].x })
-    .attr('cy', function (p) { return startExits[0].y })
-    .transition()
-    .duration(removeInsertDuration)
-    .attr('r', pegRadius)
-  
-  something.transition()
-    .delay(250)
-    .attr('r', pegRadius * movingRadiusRatio)
-    .duration(removeInsertDuration)
-    .transition()
-    .duration(1500)
-    .ease(d3.easePoly.exponent(4))
-    .attr('cx', function (p) { return corners[1].x })
-    .attr('cy', function (p) { return corners[1].y })
-    .transition()
-    .duration(removeInsertDuration)
-    .attr('r', pegRadius)
+  peg = animatePeg(board, peg, [starts[0][0], startExits[0]])
+  peg = animatePeg(board, peg, [startExits[0], track[10]])
+  peg = animatePeg(board, peg, [track[10], corners[1], track[20]])
 }
 
 function sinD(angle) {
@@ -186,4 +163,48 @@ function rotate(x, y, angle) {
 
 function holeDarker(colorStr) {
   return d3.color(colorStr).darker(.9)
+}
+
+
+const movingRadiusRatio = 1.3
+const removeInsertDuration = 500
+
+function animatePeg(board, peg, holes) {
+  pathLine = holes.map((hole) => [hole.x, hole.y])
+  pathLine = d3.line()(pathLine)
+  const path = board.append('path')
+    .attr('d', pathLine)
+    .attr('stroke', '#FFFFFF')
+    .attr('stroke-width', 0.1)
+    .attr('fill', 'none')
+
+  return peg
+    .transition()
+    .attr('r', pegRadius * movingRadiusRatio)
+    .duration(removeInsertDuration)
+    .transition()
+    .duration(1500)
+    .ease(d3.easePoly.exponent(4))
+    .attrTween("transform", translateAlong(path))
+    // .attr('cx', function (p) { return corners[1].x })
+    // .attr('cy', function (p) { return corners[1].y })
+    .transition()
+    .duration(removeInsertDuration)
+    .attr('r', pegRadius)
+    // .transition()
+    // .duration(1500)
+    // .ease(d3.easePoly.exponent(4))
+}
+
+// taken from https://gist.github.com/dem42/e10e933990ee662c9cbd#file-index-html-L81
+// Returns an attrTween for translating along the specified path element.
+function translateAlong(path) {
+  const pathNode = path.node()
+  var length = pathNode.getTotalLength();
+  return function(d, i, a) {
+    return function(t) {
+      var p = pathNode.getPointAtLength(t * length);
+      return "translate(" + p.x + "," + p.y + ")";
+    };
+  };
 }
