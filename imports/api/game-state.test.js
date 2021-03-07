@@ -6,6 +6,31 @@ import { Players } from './players.js'
 import { GameCards } from './game-cards.js'
 import GameState from './game-state.js'
 
+if (Meteor.isServer) {
+  // TODO: unfuck mocharc
+  describe('GameState', function () {
+    beforeEach(function () {
+      resetDatabase();
+    });
+
+    it('initial state', async function () {
+      ({gameId, game, players, gameState} = await setupAndInitializeGame())
+
+      assert.lengthOf(gameState.deck, 108)
+      assert.deepInclude(gameState.deck, {num: '2', suit: 'C', deck: 0})
+      assert.deepEqual(gameState.starts[3][4], {player: 3, peg: 4})
+    })
+
+    it('start', async function () {
+      ({gameId, game, players, gameState} = await setupAndInitializeGame())
+      gameState.start()
+
+      assert.lengthOf(gameState.deck, 108 - (5 * 4))
+      assert.lengthOf(gameState.hands[3], 5)
+    })
+  });
+}
+
 const setupAndInitializeGame = async function () {
   const gameId = Games.insert({numPlayers: 4})
   let game = Games.findOne(gameId)
@@ -22,7 +47,6 @@ const setupAndInitializeGame = async function () {
   })
 
   const gameState = new GameState(game)
-  await gameState.initialize()
   game = Games.findOne(gameId)
 
   return {gameId, game, players, gameState}
@@ -30,34 +54,4 @@ const setupAndInitializeGame = async function () {
 
 const assertDocumentEquality = function(a, b) {
   assert.equal(a._id.valueOf(), b._id.valueOf())
-}
-
-if (Meteor.isServer) {
-  describe('GameState', function () {
-    beforeEach(function () {
-      resetDatabase();
-    });
-
-    it('initializes', async function () {
-      ({gameId, game, players, gameState} = await setupAndInitializeGame())
-      player = Players.findOne({gameId})
-
-      // console.log(GameCards.findOne())
-
-      assert.isNotNull(game.initializedAt)
-      assert.equal(GameCards.find({gameId}).count(), 54 * 2)
-      assert.equal(GameCards.find({gameId, owner: 'D'}).count(), (54 * 2) - 20)
-      assert.equal(GameCards.find({gameId, owner: player._id}).count(), 5)
-    })
-
-    it('has a starting currentPlayer', async function () {
-      ({gameId, game, players, gameState} = await setupAndInitializeGame())
-      const player1 = Players.findOne({gameId, num: 1})
-      assertDocumentEquality(gameState.currentPlayer, player1)
-    })
-
-    it('lets a player discard and undo', function () {
-      gameState.discardCard(playerId, cardId)
-    })
-  });
 }

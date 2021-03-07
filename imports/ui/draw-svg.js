@@ -186,14 +186,9 @@ function animatePeg(board, peg, holes) {
     .duration(1500)
     .ease(d3.easePoly.exponent(4))
     .attrTween("transform", translateAlong(path))
-    // .attr('cx', function (p) { return corners[1].x })
-    // .attr('cy', function (p) { return corners[1].y })
     .transition()
     .duration(removeInsertDuration)
     .attr('r', pegRadius)
-    // .transition()
-    // .duration(1500)
-    // .ease(d3.easePoly.exponent(4))
 }
 
 // taken from https://gist.github.com/dem42/e10e933990ee662c9cbd#file-index-html-L81
@@ -201,6 +196,7 @@ function animatePeg(board, peg, holes) {
 function translateAlong(path) {
   const pathNode = path.node()
   var length = pathNode.getTotalLength();
+
   return function(d, i, a) {
     return function(t) {
       var p = pathNode.getPointAtLength(t * length);

@@ -11,56 +11,62 @@ import { GameActions } from './game-actions.js'
 // enums would be nice 😠
 const CARD_NUMBERS = [
   '2', '3', '4', '5', '6', '7', '8', '9', '10',
-  'Ja', 'Q', 'K', 'A', 'Jo'
+  'Ja', 'Q', 'K', 'A'
 ]
 
-const SUITS = ['C', 'D', 'H', 'S']
+const SUITS = ['S', 'C', 'D', 'H']
 
 export default class GameState {
   constructor(game) {
     this.game = game
-    this.deck = this.initializeDeck()
-    this.starts = this.initializeStarts()
   }
 
+  async initialize() {
+    await this.initializeCards()
+    Games.update(this.game, {$set: {initializedAt: new Date()}})
+  }
 
+  get gameId() { return this.game._id }
   get players() { return Players.find({gameId: this.gameId}).fetch() }
-  get numPlayers() { return this.game.numPlayers }
 
-  start() {
-    const hands = _.range(this.numPlayers).map((i) => {
-      return _.range(5).map(() => {
-        return this.drawCard()
+  async initializeCards() {
+    const cards = this.generateCards()
+
+    const handCount = 5
+    const randomNumbers = this.randomNumbers(0, cards.length, this.players.length * handCount)
+
+    this.players.forEach((p) => {
+      _.range(handCount).forEach((n) => {
+        const index = randomNumbers.pop()
+        cards[index].owner = ObjectID(p._id.toHexString())
       })
     })
 
-    this.hands = hands
+    await GameCards.rawCollection().insertMany(cards)
   }
 
-  initializeDeck() {
+  generateCards() {
     const cards = []
-    const decks = _.range(this.numPlayers / 2)
+    const decks = [1, 2]
 
     decks.forEach((deck) => {
       SUITS.forEach((suit) => {
         CARD_NUMBERS.slice(0, 13).forEach((num) => {
-          cards.push({num, suit, deck})
+          cards.push({deck, suit, num})
         })
       })
 
-      cards.push({num: CARD_NUMBERS[13], suit: 'R', deck})
-      cards.push({num: CARD_NUMBERS[13], suit: 'B', deck})
+      cards.push({deck, suit: 'R', num: 'Jo'})
+      cards.push({deck, suit: 'B', num: 'Jo'})
+    })
+
+    cards.forEach((c) => {
+      // c.gameId = new Mongo.ObjectID(this.gameId.toHexString())
+      c.gameId = ObjectID(this.gameId.toHexString())
+      c.owner = 'D'
     })
 
     return cards
-  }
-
-  initializeStarts() {
-    return _.range(this.numPlayers).map((i) => {
-      return _.range(5).map((j) => {
-        return {player: i, peg: j}
-      })
-    })
   }
 
   randomNumbers(start, endExclusive, length) {
@@ -73,6 +79,7 @@ export default class GameState {
     return Array.from(numbers)
   }
 
+  get numPlayers() { return this.game.numPlayers }
 
   get lastAction() {
     return GameActions.findOne({gameId: this.gameId}, {sort: {num: -1}, limit: 1})
@@ -89,12 +96,13 @@ export default class GameState {
     return Players.findOne({gameId: this.gameId, num: this.currentPlayerNum})
   }
 
-  drawCard() {
-    const i = crypto.randomInt(this.deck.length)
-    const newDeck = [...this.deck] 
-    const card = newDeck.splice(i, 1) 
-    this.deck = newDeck
-
-    return card
+  discardCard() {
   }
 }
+
+
+// Meteor.methods({
+//   'gameState.takeAction' ({game}) {
+//     if (!this.userId) { return 'not logged in' }
+//   }
+// })
