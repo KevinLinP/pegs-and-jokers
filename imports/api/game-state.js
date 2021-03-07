@@ -8,7 +8,7 @@ import { Players } from './players.js'
 import { GameEvents } from './game-events.js'
 
 // enums would be nice 😠
-const CARD_NUMBERS = [
+const RANKS = [
   '2', '3', '4', '5', '6', '7', '8', '9', '10',
   'Ja', 'Q', 'K', 'A', 'Jo'
 ]
@@ -20,22 +20,33 @@ export default class GameState {
     this.game = game
     this.deck = this.initializeDeck()
     this.starts = this.initializeStarts()
+    this.track = []
 
-    if (options.rehydrate === true) {
-      const gameEvents = this.fetchGameEvents()
-      gameEvents.forEach((event) => this.applyEvent(event))
-    }
+    this.rehydrate()
+  }
+
+  rehydrate() {
+    const gameEvents = this.fetchGameEvents()
+    gameEvents.forEach((event) => this.applyEvent(event))
   }
 
   get players() { return Players.find({gameId: this.gameId}).fetch() }
   get numPlayers() { return this.game.numPlayers }
   get gameId() { return this.game._id }
 
-  start() {
+  start(requestedHandNums = []) {
     const deckClone = _.clone(this.deck)
-    const hands = _.range(this.numPlayers).map(() => {
-      return _.range(5).map(() => {
-        return this.drawCard(deckClone)
+    const hands = _.range(this.numPlayers).map((i) => {
+      return _.range(5).map((j) => {
+        let indexOverride = null
+
+        if (requestedHandNums[i] && requestedHandNums[i][j]) {
+          indexOverride = _.findIndex(deckClone, (deckCard) => {
+            return deckCard.rank == requestedHandNums[i][j]
+          })
+        }
+
+        return this.drawCard(deckClone, indexOverride)
       })
     })
 
@@ -50,19 +61,37 @@ export default class GameState {
     this.applyEvent(event)
   }
 
+  playCard(player, card, options) {
+    // TODO: move outside
+    if (player !== this.currentPlayerNum) { return false }
+
+    let gameEventData = {
+      gameId: this.gameId,
+      num: this.lastEventNum + 1,
+      name: 'play',
+      player,
+      card,
+      ...options
+    }
+
+    const eventId = GameEvents.insert(gameEventData)
+
+    return
+  }
+
   initializeDeck() {
     const cards = []
     const decks = _.range(this.numPlayers / 2)
 
     decks.forEach((deck) => {
       SUITS.forEach((suit) => {
-        CARD_NUMBERS.slice(0, 13).forEach((num) => {
-          cards.push({num, suit, deck})
+        RANKS.slice(0, 13).forEach((rank) => {
+          cards.push({rank, suit, deck})
         })
       })
 
-      cards.push({num: CARD_NUMBERS[13], suit: 'R', deck})
-      cards.push({num: CARD_NUMBERS[13], suit: 'B', deck})
+      cards.push({rank: RANKS[13], suit: 'H', deck})
+      cards.push({rank: RANKS[13], suit: 'S', deck})
     })
 
     return cards
@@ -87,31 +116,36 @@ export default class GameState {
   }
 
 
-  get lastAction() {
-    return GameActions.findOne({gameId: this.gameId}, {sort: {num: -1}, limit: 1})
+  get lastEvent() {
+    return GameEvents.findOne({gameId: this.gameId}, {sort: {num: -1}, limit: 1})
+  }
+
+  get lastEventNum() {
+    return this.lastEvent?.num || null
   }
 
   get currentPlayerNum() {
-    if (!this.lastAction) { return 1 }
-    const lastActionPlayer = Players.findOne({playerId: this.lastAction.playerId})
+    if (!this.lastEvent) { return null }
 
-    return ((lastActionPlayer.num - 1 + 1) % this.numPlayers) + 1
-  }
-
-  get currentPlayer() {
-    return Players.findOne({gameId: this.gameId, num: this.currentPlayerNum})
+    if (this.lastEvent.player) {
+      return (this.lastEvent.player + 1) % this.numPlayers
+    } else {
+      return 0
+    }
   }
 
   // NOTE: this does not work with Svelte's reactivity
-  drawCard(deck) {
-    const i = crypto.randomInt(this.deck.length)
-    const card = deck.splice(i, 1) 
+  drawCard(deck, indexOverride) {
+    const index = indexOverride || crypto.randomInt(this.deck.length)
+    const card = deck.splice(index, 1)[0]
 
     return card
   }
 
   fetchGameEvents() {
     const gameEvents = GameEvents.find({gameId: this.gameId}, {sort: {num: 1}}).fetch()
+
+    if (gameEvents.length == 0) { return [] }
 
     if (gameEvents[0].num != 0 || _.last(gameEvents).num != (gameEvents.length - 1)) {
       throw new Error('missing game events')
@@ -125,6 +159,9 @@ export default class GameState {
       case 'start':
         this.applyStartEvent(event)
         break
+      case 'playCard':
+        this.applyPlayCardEvent(event)
+        break
       default:
         throw new Error('unhandled game event')
     }
@@ -132,11 +169,14 @@ export default class GameState {
 
   applyStartEvent(event) {
     this.hands = event.hands
-    const handCards = _.flatten(event.hands)
 
+    const handCards = _.flatten(event.hands)
     handCards.forEach((card) => {
       const index = this.deck.indexOf(card)
       this.deck.splice(index, 1)
     })
+  }
+
+  applyPlayCardEvent(event) {
   }
 }

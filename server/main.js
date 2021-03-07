@@ -11,6 +11,7 @@ Migrations.add({
 
     GameEvents.rawCollection().createIndex({gameId: 1}) // TODO: is this needed?
     GameEvents.rawCollection().createIndex({gameId: 1, num: 1}, {unique: true})
+    GameEvents.rawCollection().createIndex({gameId: 1, num: -1}, {unique: true})
   }
 });
 

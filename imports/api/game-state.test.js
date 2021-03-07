@@ -12,31 +12,53 @@ if (Meteor.isServer) {
       resetDatabase();
     });
 
-    it('initial state', async function () {
-      ({gameId, game, players, gameState} = await setupAndInitializeGame())
+    it('initial state', function () {
+      ({gameId, game, players, gameState} = setupGame())
 
       assert.lengthOf(gameState.deck, 108)
-      assert.deepInclude(gameState.deck, {num: '2', suit: 'C', deck: 0})
+      assert.deepInclude(gameState.deck, {rank: '2', suit: 'C', deck: 0})
       assert.deepEqual(gameState.starts[3][4], {player: 3, peg: 4})
     })
 
-    it('start', async function () {
-      ({gameId, game, players, gameState} = await setupAndInitializeGame())
+    it('start', function () {
+      ({gameId, game, players, gameState} = setupGame())
 
       gameState.start()
 
       assert.lengthOf(gameState.deck, 108 - (5 * 4))
       assert.lengthOf(gameState.hands[3], 5)
 
-      gameState = new GameState(game, {rehydrate: true})
+      gameState = new GameState(game)
 
       assert.lengthOf(gameState.deck, 108 - (5 * 4))
       assert.lengthOf(gameState.hands[3], 5)
     })
+
+    describe('playCard', function () {
+      it('normal card', function () {
+        ({gameId, game, players, gameState} = setupGame())
+        gameState.start([['Ja']])
+
+        console.log(gameState.hands[0])
+
+        assert.equal(gameState.hands[0][0].rank, 'Ja')
+
+        gameState.playCard(0, gameState.hands[0][0], {peg: 0})
+
+        // TODO: dedup
+        assert.deepEqual(gameState.track[8], {player: 0, peg: 0})
+        assert.isNull(gameState.starts[0][0])
+
+        gameState = new GameState(game)
+
+        assert.deepEqual(gameState.track[8], {player: 0, peg: 0})
+        assert.isNull(gameState.starts[0][0])
+      })
+    })
   });
 }
 
-const setupAndInitializeGame = async function () {
+const setupGame = function () {
   const gameId = Games.insert({numPlayers: 4})
   let game = Games.findOne(gameId)
 
@@ -52,7 +74,6 @@ const setupAndInitializeGame = async function () {
   })
 
   const gameState = new GameState(game)
-  game = Games.findOne(gameId)
 
   return {gameId, game, players, gameState}
 }
