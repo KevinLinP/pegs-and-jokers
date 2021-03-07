@@ -7,19 +7,14 @@ import { Games } from './games.js'
 import { Players } from './players.js'
 import { GameEvents } from './game-events.js'
 
-// enums would be nice 😠
-const RANKS = [
-  '2', '3', '4', '5', '6', '7', '8', '9', '10',
-  'Ja', 'Q', 'K', 'A', 'Jo'
-]
-
-const SUITS = ['C', 'D', 'H', 'S']
+import initializeMixin from './game-state/initialize.js'
+import playCardMixin from './game-state/play-card.js'
 
 export default class GameState {
   constructor(game, options = {}) {
     this.game = game
-    this.deck = this.initializeDeck()
-    this.starts = this.initializeStarts()
+    this.initializeDeck()
+    this.initializePegs()
     this.track = []
 
     this.rehydrate()
@@ -33,95 +28,10 @@ export default class GameState {
   get players() { return Players.find({gameId: this.gameId}).fetch() }
   get numPlayers() { return this.game.numPlayers }
   get gameId() { return this.game._id }
-
-  start(requestedHandNums = []) {
-    const deckClone = _.clone(this.deck)
-    const hands = _.range(this.numPlayers).map((i) => {
-      return _.range(5).map((j) => {
-        let indexOverride = null
-
-        if (requestedHandNums[i] && requestedHandNums[i][j]) {
-          indexOverride = _.findIndex(deckClone, (deckCard) => {
-            return deckCard.rank == requestedHandNums[i][j]
-          })
-        }
-
-        return this.drawCard(deckClone, indexOverride)
-      })
-    })
-
-    const eventId = GameEvents.insert({
-      gameId: this.gameId,
-      num: 0,
-      name: 'start',
-      hands
-    })
-    const event = GameEvents.findOne(eventId)
-
-    this.applyEvent(event)
-  }
-
-  playCard(player, card, options) {
-    // TODO: move outside
-    if (player !== this.currentPlayerNum) { return false }
-
-    let gameEventData = {
-      gameId: this.gameId,
-      num: this.lastEventNum + 1,
-      name: 'play',
-      player,
-      card,
-      ...options
-    }
-
-    const eventId = GameEvents.insert(gameEventData)
-
-    return
-  }
-
-  initializeDeck() {
-    const cards = []
-    const decks = _.range(this.numPlayers / 2)
-
-    decks.forEach((deck) => {
-      SUITS.forEach((suit) => {
-        RANKS.slice(0, 13).forEach((rank) => {
-          cards.push({rank, suit, deck})
-        })
-      })
-
-      cards.push({rank: RANKS[13], suit: 'H', deck})
-      cards.push({rank: RANKS[13], suit: 'S', deck})
-    })
-
-    return cards
-  }
-
-  initializeStarts() {
-    return _.range(this.numPlayers).map((i) => {
-      return _.range(5).map((j) => {
-        return {player: i, peg: j}
-      })
-    })
-  }
-
-  randomNumbers(start, endExclusive, length) {
-    const numbers = new Set()
-
-    while (numbers.size < length) {
-      numbers.add(crypto.randomInt(start, endExclusive))
-    }
-
-    return Array.from(numbers)
-  }
-
+  get lastEventNum() { return this.lastEvent?.num || null }
 
   get lastEvent() {
     return GameEvents.findOne({gameId: this.gameId}, {sort: {num: -1}, limit: 1})
-  }
-
-  get lastEventNum() {
-    return this.lastEvent?.num || null
   }
 
   get currentPlayerNum() {
@@ -167,16 +77,7 @@ export default class GameState {
     }
   }
 
-  applyStartEvent(event) {
-    this.hands = event.hands
-
-    const handCards = _.flatten(event.hands)
-    handCards.forEach((card) => {
-      const index = this.deck.indexOf(card)
-      this.deck.splice(index, 1)
-    })
-  }
-
-  applyPlayCardEvent(event) {
-  }
 }
+
+Object.assign(GameState.prototype, initializeMixin)
+Object.assign(GameState.prototype, playCardMixin)

@@ -39,20 +39,18 @@ if (Meteor.isServer) {
         ({gameId, game, players, gameState} = setupGame())
         gameState.start([['Ja']])
 
-        console.log(gameState.hands[0])
+        const card = gameState.hands[0][0]
+        assert.equal(card.rank, 'Ja')
 
-        assert.equal(gameState.hands[0][0].rank, 'Ja')
-
-        gameState.playCard(0, gameState.hands[0][0], {peg: 0})
+        gameState.playCard(0, card, {peg: 0})
 
         // TODO: dedup
         assert.deepEqual(gameState.track[8], {player: 0, peg: 0})
         assert.isNull(gameState.starts[0][0])
+        assert.deepInclude(gameState.discard, card)
+        assert.lengthOf(gameState.hands[0], 5)
 
         gameState = new GameState(game)
-
-        assert.deepEqual(gameState.track[8], {player: 0, peg: 0})
-        assert.isNull(gameState.starts[0][0])
       })
     })
   });
