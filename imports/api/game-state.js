@@ -4,9 +4,8 @@ import _ from 'lodash'
 import { ObjectID } from 'mongodb'
 
 import { Games } from './games.js'
-import { GameCards } from './game-cards.js'
 import { Players } from './players.js'
-import { GameActions } from './game-actions.js'
+import { GameEvents } from './game-events.js'
 
 // enums would be nice 😠
 const CARD_NUMBERS = [
@@ -17,24 +16,38 @@ const CARD_NUMBERS = [
 const SUITS = ['C', 'D', 'H', 'S']
 
 export default class GameState {
-  constructor(game) {
+  constructor(game, options = {}) {
     this.game = game
     this.deck = this.initializeDeck()
     this.starts = this.initializeStarts()
-  }
 
+    if (options.rehydrate === true) {
+      const gameEvents = this.fetchGameEvents()
+      gameEvents.forEach((event) => this.applyEvent(event))
+    }
+  }
 
   get players() { return Players.find({gameId: this.gameId}).fetch() }
   get numPlayers() { return this.game.numPlayers }
+  get gameId() { return this.game._id }
 
   start() {
-    const hands = _.range(this.numPlayers).map((i) => {
+    const deckClone = _.clone(this.deck)
+    const hands = _.range(this.numPlayers).map(() => {
       return _.range(5).map(() => {
-        return this.drawCard()
+        return this.drawCard(deckClone)
       })
     })
 
-    this.hands = hands
+    const eventId = GameEvents.insert({
+      gameId: this.gameId,
+      num: 0,
+      name: 'start',
+      hands
+    })
+    const event = GameEvents.findOne(eventId)
+
+    this.applyEvent(event)
   }
 
   initializeDeck() {
@@ -89,12 +102,41 @@ export default class GameState {
     return Players.findOne({gameId: this.gameId, num: this.currentPlayerNum})
   }
 
-  drawCard() {
+  // NOTE: this does not work with Svelte's reactivity
+  drawCard(deck) {
     const i = crypto.randomInt(this.deck.length)
-    const newDeck = [...this.deck] 
-    const card = newDeck.splice(i, 1) 
-    this.deck = newDeck
+    const card = deck.splice(i, 1) 
 
     return card
+  }
+
+  fetchGameEvents() {
+    const gameEvents = GameEvents.find({gameId: this.gameId}, {sort: {num: 1}}).fetch()
+
+    if (gameEvents[0].num != 0 || _.last(gameEvents).num != (gameEvents.length - 1)) {
+      throw new Error('missing game events')
+    }
+
+    return gameEvents
+  }
+
+  applyEvent(event) {
+    switch(event.name) {
+      case 'start':
+        this.applyStartEvent(event)
+        break
+      default:
+        throw new Error('unhandled game event')
+    }
+  }
+
+  applyStartEvent(event) {
+    this.hands = event.hands
+    const handCards = _.flatten(event.hands)
+
+    handCards.forEach((card) => {
+      const index = this.deck.indexOf(card)
+      this.deck.splice(index, 1)
+    })
   }
 }

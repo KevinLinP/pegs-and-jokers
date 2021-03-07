@@ -1,7 +1,6 @@
 import { Meteor } from 'meteor/meteor';
 import { Players } from '../imports/api/players.js'
-import { GameCards } from '../imports/api/game-cards.js'
-import { GameActions } from '../imports/api/game-actions.js'
+import { GameEvents } from '../imports/api/game-events.js'
 
 Migrations.add({
   version: 1,
@@ -10,10 +9,8 @@ Migrations.add({
     Players.rawCollection().createIndex({gameId: 1, name: 1}, {unique: true})
     Players.rawCollection().createIndex({gameId: 1, num: 1}, {unique: true})
 
-    GameCards.rawCollection().createIndex({gameId: 1, owner: 1})
-    GameCards.rawCollection().createIndex({gameId: 1, deck: 1, suit: 1, num: 1}, {unique: true})
-
-    GameActions.rawCollection().createIndex({gameId: 1, num: -1}, {unique: true})
+    GameEvents.rawCollection().createIndex({gameId: 1}) // TODO: is this needed?
+    GameEvents.rawCollection().createIndex({gameId: 1, num: 1}, {unique: true})
   }
 });
 

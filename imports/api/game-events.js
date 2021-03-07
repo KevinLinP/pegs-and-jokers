@@ -3,8 +3,9 @@ import { Mongo } from 'meteor/mongo'
 import { initCollection } from './common.js'
 import _ from 'lodash'
 
-export const GameCards = initCollection('gameCards')
+export const GameEvents = initCollection('gameEvents')
 
 if (Meteor.isServer) {
-  Meteor.publish('gameCards', () => GameCards.find())
+  // Meteor.publish('gameEvents', (userId) => GameEvents.find())
 }
+

@@ -3,7 +3,6 @@ import { resetDatabase } from 'meteor/xolvio:cleaner';
 
 import { Games } from './games.js'
 import { Players } from './players.js'
-import { GameCards } from './game-cards.js'
 import GameState from './game-state.js'
 
 if (Meteor.isServer) {
@@ -23,7 +22,13 @@ if (Meteor.isServer) {
 
     it('start', async function () {
       ({gameId, game, players, gameState} = await setupAndInitializeGame())
+
       gameState.start()
+
+      assert.lengthOf(gameState.deck, 108 - (5 * 4))
+      assert.lengthOf(gameState.hands[3], 5)
+
+      gameState = new GameState(game, {rehydrate: true})
 
       assert.lengthOf(gameState.deck, 108 - (5 * 4))
       assert.lengthOf(gameState.hands[3], 5)
@@ -50,8 +55,4 @@ const setupAndInitializeGame = async function () {
   game = Games.findOne(gameId)
 
   return {gameId, game, players, gameState}
-}
-
-const assertDocumentEquality = function(a, b) {
-  assert.equal(a._id.valueOf(), b._id.valueOf())
 }
