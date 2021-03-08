@@ -81,8 +81,8 @@ export default {
     event.hands.forEach((eventHand, i) => {
       this.hands[i] = new Set()
 
-      eventHand.forEach((cardCopy) => {
-        this.moveCard(cardCopy, this.draw, this.hands[i])
+      eventHand.forEach((card) => {
+        this.moveCard(card, this.draw, this.hands[i])
       })
     })
   },

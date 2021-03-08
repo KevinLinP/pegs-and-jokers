@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { assert } from "chai";
 import { resetDatabase } from 'meteor/xolvio:cleaner';
 
@@ -45,17 +46,15 @@ if (Meteor.isServer) {
 
         gameState.playCard(0, card, {peg: 0})
 
-        // TODO: dedup
-        console.log(gameState.track);
-        assert.deepEqual(gameState.track[8], {player: 0, peg: 0})
-        assert.isNull(gameState.starts[0][0])
-        assert.notDeepInclude(gameState.hands[0], card)
-        assert.deepInclude(gameState.discard, card)
-        assert.notDeepInclude(gameState.draw, gameState.hands[0][4])
-        assert.lengthOf(gameState.hands[0], 5)
-        assert.lengthOf(gameState.draw, 108 - (5 * 4) - 1)
-
-        gameState = new GameState(game)
+        runReloadRun(gameState, (gameState) => {
+          assert.deepEqual(gameState.track[8], {player: 0, peg: 0})
+          assert.isNull(gameState.starts[0][0])
+          assert.notInclude(gameState.hands[0], card)
+          assert.include(gameState.discard, card)
+          assert.isTrue(_.every(gameState.hands[0], (c) => !gameState.draw.include(c)))
+          assert.lengthOf(gameState.hands[0], 5)
+          assert.lengthOf(gameState.draw, 108 - (5 * 4) - 1)
+        })
       })
     })
   });
@@ -79,4 +78,10 @@ const setupGame = function () {
   const gameState = new GameState(game)
 
   return {gameId, game, players, gameState}
+}
+
+const runReloadRun = function (gameState, func) {
+  func.call(this, gameState)
+  const newGameState = new GameState(gameState.game)
+  func.call(this, newGameState)
 }

@@ -42,7 +42,8 @@ export default class GameState {
   // NOTE: this does not work with Svelte's reactivity
   drawCard(cards, cardOverride) {
     if (cardOverride) {
-      cards.delete(cardOverride)
+      if (!cards.delete(cardOverride)) { this.notExpected() }
+
       return cardOverride
     } else {
       const index = crypto.randomInt(cards.size)
@@ -67,7 +68,7 @@ export default class GameState {
   }
 
   moveCard(card, source, destination) {
-    source.delete(card)
+    if (!source.delete(card)) { this.notExpected() }
     destination.add(card)
   }
 
