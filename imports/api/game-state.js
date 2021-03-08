@@ -40,11 +40,17 @@ export default class GameState {
   }
 
   // NOTE: this does not work with Svelte's reactivity
-  drawCard(cards, indexOverride) {
-    const index = indexOverride || crypto.randomInt(cards.length)
-    const card = cards.splice(index, 1)[0]
+  drawCard(cards, cardOverride) {
+    if (cardOverride) {
+      cards.delete(cardOverride)
+      return cardOverride
+    } else {
+      const index = crypto.randomInt(cards.size)
+      const card = Array.from(cards.values())[index]
+      cards.delete(card)
 
-    return card
+      return card
+    }
   }
 
   applyEvent(event) {
@@ -60,15 +66,9 @@ export default class GameState {
     }
   }
 
-  moveCard(cardCopy, source, destination) {
-    const cardIndex = _.findIndex(source, (c) => {
-      return _.isEqual(c, cardCopy)
-    })
-    if (cardIndex === -1) { console.log({cardCopy, source}); this.notExpected() }
-    const card = source.splice(cardIndex, 1)[0]
-    destination.push(card)
-
-    return card
+  moveCard(card, source, destination) {
+    source.delete(card)
+    destination.add(card)
   }
 
   notExpected() {

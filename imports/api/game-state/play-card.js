@@ -10,10 +10,10 @@ export default {
     // TODO: check validity
     
     // TODO: dedup
-    if (this.draw.length === 0) {
+    if (this.draw.size === 0) {
       notImplemented()
     }
-    const drawCard = this.draw[crypto.randomInt(this.draw.length)]
+    const drawCard = Array.from(this.draw)[crypto.randomInt(this.draw.size)]
 
     let gameEventData = {
       gameId: this.gameId,
@@ -32,7 +32,8 @@ export default {
   },
 
   applyPlayCardEvent(event) {
-    switch (event.card.rank) {
+    const rank = event.card.split(' ')[0]
+    switch (rank) {
       case '2':
       case '3':
       case '4':
@@ -59,6 +60,8 @@ export default {
       case 'Jo':
         notImplemented()
         break
+      default:
+        notExpected()
     }
   },
 
@@ -82,14 +85,4 @@ export default {
     this.moveCard(event.drawCard, this.draw, playerHand)
   },
 
-  moveCard(cardCopy, source, destination) {
-    const cardIndex = _.findIndex(source, (c) => {
-      return _.isEqual(c, cardCopy)
-    })
-    if (cardIndex === -1) { console.log({cardCopy, source}); this.notExpected() }
-    const card = source.splice(cardIndex, 1)[0]
-    destination.push(card)
-
-    return card
-  }
 }

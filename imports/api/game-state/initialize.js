@@ -12,22 +12,22 @@ const SUITS = ['C', 'D', 'H', 'S']
 
 export default {
   initializeCards() {
-    const cards = []
+    const cards = new Set()
     const numDecks = this.numPlayers / 2
 
     _.range(numDecks).forEach((deck) => {
       SUITS.forEach((suit) => {
         RANKS.slice(0, 13).forEach((rank) => {
-          cards.push({rank, suit, deck})
+          cards.add(`${rank} ${suit} ${deck}`)
         })
       })
 
-      cards.push({rank: RANKS[13], suit: 'H', deck})
-      cards.push({rank: RANKS[13], suit: 'S', deck})
+      cards.add(`Jo H ${deck}`)
+      cards.add(`Jo S ${deck}`)
     })
 
     this.draw = cards
-    this.discard = []
+    this.discard = new Set()
   },
 
   initializePegs() {
@@ -54,15 +54,13 @@ export default {
     const drawClone = _.clone(this.draw)
     const hands = _.range(this.numPlayers).map((i) => {
       return _.range(5).map((j) => {
-        let indexOverride = null
+        let cardOverride = null
 
         if (requestedHandNums[i] && requestedHandNums[i][j]) {
-          indexOverride = _.findIndex(drawClone, (card) => {
-            return card.rank == requestedHandNums[i][j]
-          })
+          cardOverride = requestedHandNums[i][j]
         }
 
-        return this.drawCard(drawClone, indexOverride)
+        return this.drawCard(drawClone, cardOverride)
       })
     })
 
@@ -81,7 +79,7 @@ export default {
     this.hands = []
 
     event.hands.forEach((eventHand, i) => {
-      this.hands[i] = []
+      this.hands[i] = new Set()
 
       eventHand.forEach((cardCopy) => {
         this.moveCard(cardCopy, this.draw, this.hands[i])

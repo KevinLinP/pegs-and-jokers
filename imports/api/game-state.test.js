@@ -16,7 +16,7 @@ if (Meteor.isServer) {
       ({gameId, game, players, gameState} = setupGame())
 
       assert.lengthOf(gameState.draw, 108)
-      assert.deepInclude(gameState.draw, {rank: '2', suit: 'C', deck: 0})
+      assert.deepInclude(gameState.draw, `2 C 0`)
       assert.deepEqual(gameState.starts[3][4], {player: 3, peg: 4})
     })
 
@@ -37,14 +37,16 @@ if (Meteor.isServer) {
     describe('playCard', function () {
       it('normal card', function () {
         ({gameId, game, players, gameState} = setupGame())
-        gameState.start([['Ja']])
+        const card = 'Ja C 0'
+        gameState.start([[card]])
 
-        const card = gameState.hands[0][0]
-        assert.equal(card.rank, 'Ja')
+        // const card = Array.from(gameState.hands[0])[0]
+        // assert.isNotNull()
 
         gameState.playCard(0, card, {peg: 0})
 
         // TODO: dedup
+        console.log(gameState.track);
         assert.deepEqual(gameState.track[8], {player: 0, peg: 0})
         assert.isNull(gameState.starts[0][0])
         assert.notDeepInclude(gameState.hands[0], card)
