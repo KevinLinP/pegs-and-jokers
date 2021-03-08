@@ -15,8 +15,8 @@ if (Meteor.isServer) {
     it('initial state', function () {
       ({gameId, game, players, gameState} = setupGame())
 
-      assert.lengthOf(gameState.deck, 108)
-      assert.deepInclude(gameState.deck, {rank: '2', suit: 'C', deck: 0})
+      assert.lengthOf(gameState.draw, 108)
+      assert.deepInclude(gameState.draw, {rank: '2', suit: 'C', deck: 0})
       assert.deepEqual(gameState.starts[3][4], {player: 3, peg: 4})
     })
 
@@ -25,12 +25,12 @@ if (Meteor.isServer) {
 
       gameState.start()
 
-      assert.lengthOf(gameState.deck, 108 - (5 * 4))
+      assert.lengthOf(gameState.draw, 108 - (5 * 4))
       assert.lengthOf(gameState.hands[3], 5)
 
       gameState = new GameState(game)
 
-      assert.lengthOf(gameState.deck, 108 - (5 * 4))
+      assert.lengthOf(gameState.draw, 108 - (5 * 4))
       assert.lengthOf(gameState.hands[3], 5)
     })
 
@@ -49,6 +49,7 @@ if (Meteor.isServer) {
         assert.isNull(gameState.starts[0][0])
         assert.deepInclude(gameState.discard, card)
         assert.lengthOf(gameState.hands[0], 5)
+        assert.lengthOf(gameState.draw, 108 - (5 * 4) - 1)
 
         gameState = new GameState(game)
       })

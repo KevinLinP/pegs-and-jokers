@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import crypto from 'crypto';
 
 import { GameEvents } from '../game-events.js'
 
@@ -7,6 +8,12 @@ export default {
     // TODO: move outside
     if (player !== this.currentPlayerNum) { return false }
     // TODO: check validity
+    
+    // TODO: dedup
+    if (this.draw.length === 0) {
+      notImplemented()
+    }
+    const drawCard = this.draw[crypto.randomInt(this.draw.length)]
 
     let gameEventData = {
       gameId: this.gameId,
@@ -14,6 +21,7 @@ export default {
       name: 'playCard',
       player,
       card,
+      drawCard,
       ...options
     }
 
@@ -24,8 +32,7 @@ export default {
   },
 
   applyPlayCardEvent(event) {
-    const rank = event.card.rank
-    switch (rank) {
+    switch (event.card.rank) {
       case '2':
       case '3':
       case '4':
@@ -33,13 +40,13 @@ export default {
       case '6':
       case '9':
       case '10':
-        throw new Error('implement')
+        notImplemented()
         break
       case '7':
-        throw new Error('implement')
+        notImplemented()
         break
       case '8':
-        throw new Error('implement')
+        notImplemented()
         break
       case 'Ja':
       case 'Q':
@@ -47,15 +54,40 @@ export default {
         this.applyFaceCard(event)
         break
       case 'A':
-        throw new Error('implement')
+        notImplemented()
         break
       case 'Jo':
-        throw new Error('implement')
+        notImplemented()
         break
     }
   },
 
   applyFaceCard(event) {
-    console.log('hi')
+    const playerNum = event.player
+    const pegLoc = this.pegs[playerNum][event.peg]
+
+    if (pegLoc[0] === 'start') {
+      const peg = this.starts[playerNum][pegLoc[1]]
+      this.starts[playerNum][pegLoc[1]] = null
+
+      const startExit = 8 + (playerNum * 18)
+      this.track[startExit] = peg
+      this.pegs[playerNum][event.peg] = ['track', startExit]
+    } else {
+      throw new Error('implement')
+    }
+
+    const playerHand = this.hands[playerNum]
+
+    const cardIndex = _.findIndex(playerHand, (c) => {
+      return _.isEqual(c, event.card)
+    })
+    if (cardIndex === -1) { this.notExpected() }
+    const card = playerHand.splice(cardIndex, 1)[0]
+    this.discard.push(card)
+
+    const drawCardIndex = this.draw.indexOf(event.drawCard)
+    const drawCard = this.draw.splice(drawCardIndex, 1)[0]
+    this.hands[playerNum].push(drawCard)
   }
 }

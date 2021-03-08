@@ -13,16 +13,10 @@ import playCardMixin from './game-state/play-card.js'
 export default class GameState {
   constructor(game, options = {}) {
     this.game = game
-    this.initializeDeck()
+    this.initializeCards()
     this.initializePegs()
-    this.track = []
 
     this.rehydrate()
-  }
-
-  rehydrate() {
-    const gameEvents = this.fetchGameEvents()
-    gameEvents.forEach((event) => this.applyEvent(event))
   }
 
   get players() { return Players.find({gameId: this.gameId}).fetch() }
@@ -45,23 +39,11 @@ export default class GameState {
   }
 
   // NOTE: this does not work with Svelte's reactivity
-  drawCard(deck, indexOverride) {
-    const index = indexOverride || crypto.randomInt(this.deck.length)
-    const card = deck.splice(index, 1)[0]
+  drawCard(cards, indexOverride) {
+    const index = indexOverride || crypto.randomInt(cards.length)
+    const card = cards.splice(index, 1)[0]
 
     return card
-  }
-
-  fetchGameEvents() {
-    const gameEvents = GameEvents.find({gameId: this.gameId}, {sort: {num: 1}}).fetch()
-
-    if (gameEvents.length == 0) { return [] }
-
-    if (gameEvents[0].num != 0 || _.last(gameEvents).num != (gameEvents.length - 1)) {
-      throw new Error('missing game events')
-    }
-
-    return gameEvents
   }
 
   applyEvent(event) {
@@ -77,6 +59,13 @@ export default class GameState {
     }
   }
 
+  notExpected() {
+    throw new Error('not expected')
+  }
+
+  notImplemented() {
+    throw new Error('to be implemented')
+  }
 }
 
 Object.assign(GameState.prototype, initializeMixin)
