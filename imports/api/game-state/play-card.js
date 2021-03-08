@@ -78,16 +78,18 @@ export default {
     }
 
     const playerHand = this.hands[playerNum]
+    this.moveCard(event.card, playerHand, this.discard)
+    this.moveCard(event.drawCard, this.draw, playerHand)
+  },
 
-    const cardIndex = _.findIndex(playerHand, (c) => {
-      return _.isEqual(c, event.card)
+  moveCard(cardCopy, source, destination) {
+    const cardIndex = _.findIndex(source, (c) => {
+      return _.isEqual(c, cardCopy)
     })
-    if (cardIndex === -1) { this.notExpected() }
-    const card = playerHand.splice(cardIndex, 1)[0]
-    this.discard.push(card)
+    if (cardIndex === -1) { console.log({cardCopy, source}); this.notExpected() }
+    const card = source.splice(cardIndex, 1)[0]
+    destination.push(card)
 
-    const drawCardIndex = this.draw.indexOf(event.drawCard)
-    const drawCard = this.draw.splice(drawCardIndex, 1)[0]
-    this.hands[playerNum].push(drawCard)
+    return card
   }
 }

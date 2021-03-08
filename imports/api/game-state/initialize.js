@@ -78,12 +78,14 @@ export default {
   },
 
   applyStartEvent(event) {
-    this.hands = event.hands
+    this.hands = []
 
-    const handCards = _.flatten(event.hands)
-    handCards.forEach((card) => {
-      const index = this.draw.indexOf(card)
-      this.draw.splice(index, 1)
+    event.hands.forEach((eventHand, i) => {
+      this.hands[i] = []
+
+      eventHand.forEach((cardCopy) => {
+        this.moveCard(cardCopy, this.draw, this.hands[i])
+      })
     })
   },
 

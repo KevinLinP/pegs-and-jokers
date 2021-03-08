@@ -23,6 +23,7 @@ export default class GameState {
   get numPlayers() { return this.game.numPlayers }
   get gameId() { return this.game._id }
   get lastEventNum() { return this.lastEvent?.num || null }
+  get deck() { this.deprecated() }
 
   get lastEvent() {
     return GameEvents.findOne({gameId: this.gameId}, {sort: {num: -1}, limit: 1})
@@ -59,12 +60,27 @@ export default class GameState {
     }
   }
 
+  moveCard(cardCopy, source, destination) {
+    const cardIndex = _.findIndex(source, (c) => {
+      return _.isEqual(c, cardCopy)
+    })
+    if (cardIndex === -1) { console.log({cardCopy, source}); this.notExpected() }
+    const card = source.splice(cardIndex, 1)[0]
+    destination.push(card)
+
+    return card
+  }
+
   notExpected() {
     throw new Error('not expected')
   }
 
   notImplemented() {
     throw new Error('to be implemented')
+  }
+
+  deprecated() {
+    throw new Error('deprecated')
   }
 }
 

@@ -47,7 +47,9 @@ if (Meteor.isServer) {
         // TODO: dedup
         assert.deepEqual(gameState.track[8], {player: 0, peg: 0})
         assert.isNull(gameState.starts[0][0])
+        assert.notDeepInclude(gameState.hands[0], card)
         assert.deepInclude(gameState.discard, card)
+        assert.notDeepInclude(gameState.draw, gameState.hands[0][4])
         assert.lengthOf(gameState.hands[0], 5)
         assert.lengthOf(gameState.draw, 108 - (5 * 4) - 1)
 
