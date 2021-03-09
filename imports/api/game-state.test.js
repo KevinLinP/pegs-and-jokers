@@ -39,17 +39,22 @@ if (Meteor.isServer) {
           const card = 'Ja C 0'
           gameState.start([[card]])
 
-          const availableMove = {
+          const move = {
             action: 'playCard',
             card,
             peg: 0
           }
 
-          assert.deepInclude(gameState.availableMoves(0), availableMove)
+          const result = [
+            {peg: 0, newLocation: ['track', 8]}
+          ]
+
+          assert.deepInclude(gameState.availableMoves(0), {move, result})
 
           // const card = Array.from(gameState.hands[0])[0]
           // assert.isNotNull()
 
+          // TODO: use availableMove.result to execute move
           gameState.playCard(0, card, {peg: 0})
 
           runReloadRun(gameState, (gameState) => {

@@ -23,7 +23,7 @@ export default {
       }
 
 
-      cardMoves.forEach((move) => {
+      cardMoves.forEach(({move}) => {
         move.action = 'playCard'
         move.card = card
       })
@@ -35,14 +35,25 @@ export default {
   },
 
   startExitMoves(playerNum) {
-    startExit = this.track[8 + (playerNum * 18)]
-    if (startExit) { return [] }
+    startExitIndex = 8 + (playerNum * 18)
+    startExitPeg = this.track[startExitIndex]
+    if (startExitPeg) {
+      if (startExitPeg.player == playerNum) {
+        return []
+      } else {
+        // TODO: figure out this case
+        this.notImplemented()
+      }
+    }
 
     const moves = []
     this.starts[playerNum].forEach((startPeg) => {
       if (!startPeg) { return }
       const move = {peg: startPeg.peg}
-      moves.push(move)
+      const result = [
+        {peg: startPeg.peg, newLocation: ['track', startExitIndex]}
+      ]
+      moves.push({move, result})
     })
 
     return moves
