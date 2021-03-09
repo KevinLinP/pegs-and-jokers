@@ -8,6 +8,7 @@ import { Players } from './players.js'
 import { GameEvents } from './game-events.js'
 
 import initializeMixin from './game-state/initialize.js'
+import availableMovesMixin from './game-state/available-moves.js'
 import playCardMixin from './game-state/play-card.js'
 
 export default class GameState {
@@ -85,5 +86,8 @@ export default class GameState {
   }
 }
 
+// if there is a better way to do mixins,
+// please let me know
 Object.assign(GameState.prototype, initializeMixin)
+Object.assign(GameState.prototype, availableMovesMixin)
 Object.assign(GameState.prototype, playCardMixin)

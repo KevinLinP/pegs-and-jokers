@@ -26,34 +26,41 @@ if (Meteor.isServer) {
 
       gameState.start()
 
-      assert.lengthOf(gameState.draw, 108 - (5 * 4))
-      assert.lengthOf(gameState.hands[3], 5)
-
-      gameState = new GameState(game)
-
-      assert.lengthOf(gameState.draw, 108 - (5 * 4))
-      assert.lengthOf(gameState.hands[3], 5)
+      runReloadRun(gameState, (gameState) => {
+        assert.lengthOf(gameState.draw, 108 - (5 * 4))
+        assert.lengthOf(gameState.hands[3], 5)
+      })
     })
 
     describe('playCard', function () {
-      it('normal card', function () {
-        ({gameId, game, players, gameState} = setupGame())
-        const card = 'Ja C 0'
-        gameState.start([[card]])
+      describe('face card', function () {
+        it('exit start', function () {
+          ({gameId, game, players, gameState} = setupGame())
+          const card = 'Ja C 0'
+          gameState.start([[card]])
 
-        // const card = Array.from(gameState.hands[0])[0]
-        // assert.isNotNull()
+          const availableMove = {
+            action: 'playCard',
+            card,
+            peg: 0
+          }
 
-        gameState.playCard(0, card, {peg: 0})
+          assert.deepInclude(gameState.availableMoves(0), availableMove)
 
-        runReloadRun(gameState, (gameState) => {
-          assert.deepEqual(gameState.track[8], {player: 0, peg: 0})
-          assert.isNull(gameState.starts[0][0])
-          assert.notInclude(gameState.hands[0], card)
-          assert.include(gameState.discard, card)
-          assert.isTrue(_.every(gameState.hands[0], (c) => !gameState.draw.include(c)))
-          assert.lengthOf(gameState.hands[0], 5)
-          assert.lengthOf(gameState.draw, 108 - (5 * 4) - 1)
+          // const card = Array.from(gameState.hands[0])[0]
+          // assert.isNotNull()
+
+          gameState.playCard(0, card, {peg: 0})
+
+          runReloadRun(gameState, (gameState) => {
+            assert.deepEqual(gameState.track[8], {player: 0, peg: 0})
+            assert.isNull(gameState.starts[0][0])
+            assert.notInclude(gameState.hands[0], card)
+            assert.include(gameState.discard, card)
+            assert.isTrue(_.every(gameState.hands[0], (c) => !gameState.draw.include(c)))
+            assert.lengthOf(gameState.hands[0], 5)
+            assert.lengthOf(gameState.draw, 108 - (5 * 4) - 1)
+          })
         })
       })
     })

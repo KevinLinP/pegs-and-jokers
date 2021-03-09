@@ -18,6 +18,7 @@ export default {
     _.range(numDecks).forEach((deck) => {
       SUITS.forEach((suit) => {
         RANKS.slice(0, 13).forEach((rank) => {
+          // this is the jankiest part of the code so far
           cards.add(`${rank} ${suit} ${deck}`)
         })
       })
