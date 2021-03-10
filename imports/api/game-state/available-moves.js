@@ -24,7 +24,6 @@ export default {
 
 
       cardMoves.forEach(({move}) => {
-        move.action = 'playCard'
         move.card = card
       })
 

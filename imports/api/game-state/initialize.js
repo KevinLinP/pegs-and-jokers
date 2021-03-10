@@ -45,7 +45,7 @@ export default {
       _.range(5).forEach((peg) => {
         const pegObj = {player, peg}
 
-        this.pegs[player][peg] = ['start', peg]
+        this.pegs[player][peg] = ['start', player, peg]
         this.starts[player][peg] = pegObj
       })
     })
