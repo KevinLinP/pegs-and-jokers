@@ -49,12 +49,10 @@ export default {
   movePegs(event, results) {
     const playerNum = event.player
     results.forEach((result) => {
-      console.log(result)
       const pegLoc = this.pegs[playerNum][result.peg]
       const newLoc = result.newLocation
       this.movePeg(pegLoc, newLoc)
     })
-
   },
 
   movePeg(pegLoc, newLoc) {
@@ -72,6 +70,9 @@ export default {
     if (newLoc[0] == 'track') {
       if (this.track[newLoc[1]]) { this.notExpected() }
       this.track[newLoc[1]] = peg
+    } else {
+      this.notImplemented
     }
+    this.pegs[peg.player][peg.peg] = newLoc
   }
 }

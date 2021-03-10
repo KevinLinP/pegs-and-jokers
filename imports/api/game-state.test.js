@@ -58,6 +58,7 @@ if (Meteor.isServer) {
           // TODO: bring back rehydrate
           // runReloadRun(gameState, (gameState) => {
             assert.deepEqual(gameState.track[8], {player: 0, peg: 0})
+            assert.deepEqual(gameState.pegs[0][0], ['track', 8])
             assert.isNull(gameState.starts[0][0])
             assert.notInclude(gameState.hands[0], card)
             assert.include(gameState.discard, card)
